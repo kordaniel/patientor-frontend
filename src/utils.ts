@@ -19,7 +19,12 @@ const constructErrorMessage = (error: unknown): string => {
   return errorMessage;
 };
 
+const assertNever = (value: never): never => {
+  throw new Error(`Unhandled discriminated union member: ${JSON.stringify(value)}`);
+};
+
 export {
   parseId,
-  constructErrorMessage
+  constructErrorMessage,
+  assertNever
 };

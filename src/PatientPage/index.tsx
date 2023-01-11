@@ -13,6 +13,8 @@ import {
   constructErrorMessage
 }                          from "../utils";
 
+import EntryView           from "../components/Entry";
+
 import { Typography }  from "@material-ui/core";
 import FemaleIcon      from "@mui/icons-material/Female";
 import MaleIcon        from "@mui/icons-material/Male";
@@ -70,8 +72,15 @@ const PatientPage = () => {
           {patientData?.gender === Gender.Female && <FemaleIcon />}
           {patientData?.gender === Gender.Other && <TransgenderIcon />}
         </Typography>
-        <p>ssn: {patientData?.ssn}</p>
-        <p>occupation: {patientData?.occupation}</p>
+        <p>
+          Ssn: {patientData?.ssn}<br />
+          Occupation: {patientData?.occupation}
+        </p>
+        <Typography variant="h5">Entries</Typography>
+        {patientData?.entries !== undefined && patientData?.entries.length > 0
+          ? patientData?.entries.map(e => <EntryView key={e.id} entry={e} />)
+          : <p>No entries, patient is probably either really healthy or scared of doctors!</p>
+        }
       </>
     }
     </div>
