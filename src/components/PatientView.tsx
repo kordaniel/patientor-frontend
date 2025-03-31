@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { SensitivePatient } from '../types';
+import { Patient } from '../types';
 import { Box, CircularProgress, Typography } from '@mui/material';
 
 import patientService from '../services/patients';
@@ -9,7 +9,7 @@ import GenderIcon from './Icons/GenderIcon';
 
 const PatientView = () => {
   const { patientId } = useParams();
-  const [patient, setPatient] = useState<SensitivePatient | undefined>(undefined);
+  const [patient, setPatient] = useState<Patient | undefined>(undefined);
 
   useEffect(() => {
     const fetchPatient = async () => {
