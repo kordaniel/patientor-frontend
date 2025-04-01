@@ -9,7 +9,7 @@ import { Diagnosis, NonSensitivePatient } from "./types";
 import diagnoseService from "./services/diagnoses";
 import patientService from "./services/patients";
 import PatientListPage from "./components/PatientListPage";
-import PatientView from "./components/PatientView";
+import PatientPage from "./components/PatientPage";
 
 const App = () => {
   const [patients, setPatients] = useState<NonSensitivePatient[]>([]);
@@ -45,7 +45,7 @@ const App = () => {
           <Routes>
             <Route path="/" element={<PatientListPage patients={patients} setPatients={setPatients} />} />
             <Route path="/patient">
-              <Route path=":patientId" element={<PatientView diagnosesList={diagnoses} />} />
+              <Route path=":patientId" element={<PatientPage diagnosesList={diagnoses} />} />
             </Route>
           </Routes>
         </Container>
