@@ -1,4 +1,5 @@
 type UnionOmit<T, K extends string | number | symbol> = T extends unknown ? Omit<T, K> : never;
+type UnionExtractExtendingFields<T, U> = Omit<T, keyof Omit<U, 'type'>>;
 
 export interface Diagnosis {
   code: string;
@@ -6,7 +7,14 @@ export interface Diagnosis {
   latin?: string;
 }
 
+export enum EntryType {
+  HealthCheck = 'HealthCheck',
+  Hospital = 'Hospital',
+  OccupationalHealthcare = 'OccupationalHealthcare',
+}
+
 interface BaseEntry {
+  type: EntryType;
   id: string;
   description: string;
   date: string;
@@ -22,12 +30,12 @@ export enum HealthCheckRating {
 }
 
 export interface HealthCheckEntry extends BaseEntry {
-  type: 'HealthCheck';
+  type: EntryType.HealthCheck;
   healthCheckRating: HealthCheckRating;
 }
 
 export interface OccupationalHealthcareEntry extends BaseEntry {
-  type: 'OccupationalHealthcare';
+  type: EntryType.OccupationalHealthcare;
   employerName: string;
   sickLeave?: {
     startDate: string;
@@ -36,7 +44,7 @@ export interface OccupationalHealthcareEntry extends BaseEntry {
 }
 
 export interface HospitalEntry extends BaseEntry {
-  type: 'Hospital';
+  type: EntryType.Hospital;
   discharge: {
     date: string;
     criteria: string;
@@ -64,8 +72,12 @@ export interface Patient {
   entries: Entry[];
 }
 
-export type PatientFormValues = Omit<Patient, "id" | "entries">;
-
+export type PatientFormValues = Omit<Patient, 'id' | 'entries'>;
 export type NonSensitivePatient = Omit<Patient, 'ssn' | 'entries'>;
+export type BaseEntryFormValues = Required<Omit<BaseEntry,'id'>>;
 
-export type HealthCheckEntryFormValues = Required<UnionOmit<HealthCheckEntry, 'id'>>;
+export type NewEntryFormValues = Required<UnionOmit<Entry, 'id'>>;
+
+export type HealthCheckEntryFormValues = UnionExtractExtendingFields<HealthCheckEntry, BaseEntry>;
+export type OccupationalHealthcareEntryFormValues = Required<UnionExtractExtendingFields<OccupationalHealthcareEntry, BaseEntry>>;
+export type HospitalEntryFormValues = UnionExtractExtendingFields<HospitalEntry, BaseEntry>;
