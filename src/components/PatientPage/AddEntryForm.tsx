@@ -9,6 +9,10 @@ import {
   TextField,
   Typography
 } from '@mui/material';
+import Checkbox from '@mui/material/Checkbox';
+import Chip from '@mui/material/Chip';
+import FormControl from '@mui/material/FormControl';
+import OutlinedInput from '@mui/material/OutlinedInput';
 import axios from 'axios';
 
 import ErrorRenderer from '../ErrorRenderer';
@@ -22,6 +26,7 @@ import patientService from '../../services/patients';
 import { assertNever, isString } from '../../utils/parsersTypeGuards';
 import {
   BaseEntryFormValues,
+  Diagnosis,
   Entry,
   EntryType,
   HealthCheckEntryFormValues,
@@ -33,7 +38,7 @@ import {
 } from '../../types';
 
 interface FormValues {
-  emptyBaseEntry: Omit<BaseEntryFormValues, 'type'>;
+  emptyBaseEntry: BaseEntryFormValues;
   emptyHealthCheckEntry: HealthCheckEntryFormValues;
   emptyOccupationalHealthcareEntry: OccupationalHealthcareEntryFormValues;
   emptyHospitalEntry: HospitalEntryFormValues;
@@ -41,7 +46,7 @@ interface FormValues {
    * Creates a new object for the form with the required fields for every different type. If second argument
    * is passed, copies the state of the baseEntry fields to the new object.
    */
-  constructNewEntry: (type: EntryType, baseEntryFormValues?: Omit<BaseEntryFormValues, 'type'>) => NewEntryFormValues;
+  constructNewEntry: (type: EntryType, baseEntryFormValues?: BaseEntryFormValues) => NewEntryFormValues;
 }
 
 const formValues: FormValues = {
@@ -49,7 +54,7 @@ const formValues: FormValues = {
     description: '',
     date: '',
     specialist: '',
-    diagnosisCodes: [''],
+    diagnosisCodes: [],
   },
   emptyHealthCheckEntry: {
     type: EntryType.HealthCheck,
@@ -58,10 +63,10 @@ const formValues: FormValues = {
   emptyOccupationalHealthcareEntry: {
     type: EntryType.OccupationalHealthcare,
     employerName: '',
-    sickLeave: {
-      startDate: '',
-      endDate: '',
-    },
+    //sickLeave: {
+    //  startDate: '',
+    //  endDate: '',
+    //},
   },
   emptyHospitalEntry: {
     type: EntryType.Hospital,
@@ -88,7 +93,14 @@ const formValues: FormValues = {
 
 interface AddEntryFormProps {
   patientId: Patient['id'];
+  diagnosesList: Diagnosis[];
   addEntryToPatient: (entry: Entry) => void;
+}
+
+interface SelectDiagnosisCodesProps {
+  diagnosesList: AddEntryFormProps['diagnosesList'];
+  selectedDiagnoses: BaseEntryFormValues['diagnosisCodes'];
+  onChange: (e: SelectChangeEvent<string | string[]>) => void;
 }
 
 interface EntryTypeOption {
@@ -96,11 +108,51 @@ interface EntryTypeOption {
   label: string;
 }
 
+interface DiagnoseOption {
+  value: string;
+  label: string;
+}
+
 const entryTypeOptions: EntryTypeOption[] = Object.values(EntryType).map(type => ({
   value: type, label: type.toString()
 }));
 
-const AddEntryForm = ({ patientId, addEntryToPatient }: AddEntryFormProps) => {
+const SelectDiagnosisCodes = ({ diagnosesList, selectedDiagnoses, onChange }: SelectDiagnosisCodesProps) => {
+  const diagnosisOptions: DiagnoseOption[] = diagnosesList.map(({ code, name }) => ({
+    value: code, label: `${code} - ${name}`
+  }));
+
+  return (
+    <FormControl>
+      <InputLabel id="diagnosisCodesSelection-label">Diagnosis codes</InputLabel>
+      <Select
+        labelId="diagnosisCodesSelection-label"
+        id="diagnosisCodesSelection"
+        multiple
+        fullWidth
+        value={Array.isArray(selectedDiagnoses) ? selectedDiagnoses : []}
+        onChange={onChange}
+        input={<OutlinedInput id="diagnosisCodesSelection" label="Diagnosis codes" />}
+        renderValue={(selected) => (
+          <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
+            {selected.map((value) => (
+              <Chip key={value} label={value} />
+            ))}
+          </Box>
+        )}
+      >
+        {diagnosisOptions.map(({ value, label }) => (
+          <MenuItem key={value} value={value}>
+            <Checkbox checked={Array.isArray(selectedDiagnoses) ? selectedDiagnoses.includes(value) : false} />
+            {label}
+          </MenuItem>
+        ))}
+      </Select>
+    </FormControl>
+  );
+};
+
+const AddEntryForm = ({ patientId, diagnosesList, addEntryToPatient }: AddEntryFormProps) => {
   const [error, setError] = useState<string>('');
   const [newEntryValues, setNewEntryValues] = useState<NewEntryFormValues>(
     formValues.constructNewEntry(EntryType.HealthCheck)
@@ -195,20 +247,12 @@ const AddEntryForm = ({ patientId, addEntryToPatient }: AddEntryFormProps) => {
     });
   };
 
-  const handleDiagnosisCodesChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const textInputElements = e.target.value.split(/[\s]+|,\s?/); // split input by whitespace and ,whitespace?
-    const diagnosisCodes = textInputElements.filter((e, i) => e !== ''
-      ? true                                                      // keep all non-empty diagnosis codes
-      : textInputElements.length === 0
-        ? true                                                    // keep the initial empty code
-        : newEntryValues.diagnosisCodes.length === textInputElements.length
-          ? false                                                 // trigged when user is erasing content from the textfield, discard emptied diagnose
-          : (i+1) === textInputElements.length ? true : false     // prevent user from adding empty diagnoses and keep only the last one - triggered when user repeats whitespace or ,
-    );
-
+  const handleDiagnosisCodesChange = (e: SelectChangeEvent<string | string[]>) => {
+    const { target: { value }, } = e;
     setNewEntryValues({
       ...newEntryValues,
-      diagnosisCodes,
+      // On autofill we get a stringified value.
+      diagnosisCodes: typeof value === 'string' ? value.split(',').map(c => c.trim()) : value,
     });
   };
 
@@ -216,10 +260,7 @@ const AddEntryForm = ({ patientId, addEntryToPatient }: AddEntryFormProps) => {
     e.preventDefault();
 
     try {
-      const newHealthCheckEntryResponse = await patientService.addEntry(patientId, {
-        ...newEntryValues,
-        diagnosisCodes: newEntryValues.diagnosisCodes.filter(c => c !== ''),
-      });
+      const newHealthCheckEntryResponse = await patientService.addEntry(patientId, newEntryValues);
       setError('');
       setNewEntryValues(formValues.constructNewEntry(newEntryValues.type));
       addEntryToPatient(newHealthCheckEntryResponse);
@@ -295,9 +336,14 @@ const AddEntryForm = ({ patientId, addEntryToPatient }: AddEntryFormProps) => {
         />
         <TextField
           label="Date"
+          type="date"
           fullWidth
+          InputLabelProps={{ shrink: true }}
           value={newEntryValues.date}
           onChange={handleDateChange}
+          inputProps={{
+            max: new Date().toJSON().slice(0,10),
+          }}
         />
         <TextField
           label="Specialist"
@@ -305,10 +351,9 @@ const AddEntryForm = ({ patientId, addEntryToPatient }: AddEntryFormProps) => {
           value={newEntryValues.specialist}
           onChange={handleSpecialistChange}
         />
-        <TextField
-          label="Diagnosis codes (separate with space or comma)"
-          fullWidth
-          value={newEntryValues.diagnosisCodes.join(', ')}
+        <SelectDiagnosisCodes
+          diagnosesList={diagnosesList}
+          selectedDiagnoses={newEntryValues.diagnosisCodes}
           onChange={handleDiagnosisCodesChange}
         />
         {selectExtendedEntryTypeFields()}

@@ -1,5 +1,6 @@
 import React, { ChangeEvent } from 'react';
-import { CircularProgress, TextField } from '@mui/material';
+import { CircularProgress, FormControlLabel, FormGroup, TextField } from '@mui/material';
+import CheckBox from '@mui/material/Checkbox';
 
 import  { EntryType, HealthCheckRating, NewEntryFormValues } from '../../types';
 
@@ -68,7 +69,9 @@ export const HospitalEntryValues = ({ newHealthCheckEntry, setNewHealthCheckEntr
     <>
       <TextField
         label="Discharge date"
+        type="date"
         fullWidth
+        InputLabelProps={{ shrink: true }}
         value={newHealthCheckEntry.discharge.date}
         onChange={handleDischargeDateChange}
       />
@@ -88,6 +91,23 @@ export const OccupationalHealthcareValues = ({ newHealthCheckEntry, setNewHealth
     return <CircularProgress />;
   }
 
+  const handleCheckbox = () => {
+    const newFormState = {
+      ...newHealthCheckEntry
+    };
+
+    if (!newHealthCheckEntry.sickLeave) {
+      newFormState.sickLeave = {
+        startDate: '',
+        endDate: '',
+      };
+    } else {
+      delete newFormState.sickLeave;
+    }
+
+    setNewHealthCheckEntry(newFormState);
+  };
+
   const handleEmployerNameChange = (e: ChangeEvent<HTMLInputElement>) => {
     setNewHealthCheckEntry({
       ...newHealthCheckEntry,
@@ -96,6 +116,10 @@ export const OccupationalHealthcareValues = ({ newHealthCheckEntry, setNewHealth
   };
 
   const handleSickLeaveStartDateChange = (e: ChangeEvent<HTMLInputElement>) => {
+    if (!newHealthCheckEntry.sickLeave) {
+      return;
+    }
+
     setNewHealthCheckEntry({
       ...newHealthCheckEntry,
       sickLeave: {
@@ -106,6 +130,10 @@ export const OccupationalHealthcareValues = ({ newHealthCheckEntry, setNewHealth
   };
 
   const handleSickLeaveEndDateChange = (e: ChangeEvent<HTMLInputElement>) => {
+    if (!newHealthCheckEntry.sickLeave) {
+      return;
+    }
+
     setNewHealthCheckEntry({
       ...newHealthCheckEntry,
       sickLeave: {
@@ -123,18 +151,38 @@ export const OccupationalHealthcareValues = ({ newHealthCheckEntry, setNewHealth
         value={newHealthCheckEntry.employerName}
         onChange={handleEmployerNameChange}
       />
-      <TextField
-        label="Start date"
-        fullWidth
-        value={newHealthCheckEntry.sickLeave.startDate}
-        onChange={handleSickLeaveStartDateChange}
-      />
-      <TextField
-        label="End date"
-        fullWidth
-        value={newHealthCheckEntry.sickLeave.endDate}
-        onChange={handleSickLeaveEndDateChange}
-      />
+      <FormGroup>
+        <FormControlLabel
+          control={
+            <CheckBox
+              checked={Boolean(newHealthCheckEntry.sickLeave)}
+              onChange={handleCheckbox}
+              inputProps={{ "aria-label": "Grant sickleave and open sickleave dates selection" }}
+            />
+          }
+          label="Grant sickleave"
+        />
+      </FormGroup>
+      {newHealthCheckEntry.sickLeave && (
+        <>
+          <TextField
+            label="Start date"
+            type="date"
+            fullWidth
+            InputLabelProps={{ shrink: true }}
+            value={newHealthCheckEntry.sickLeave.startDate}
+            onChange={handleSickLeaveStartDateChange}
+          />
+          <TextField
+            label="End date"
+            type="date"
+            fullWidth
+            InputLabelProps={{ shrink: true }}
+            value={newHealthCheckEntry.sickLeave.endDate}
+            onChange={handleSickLeaveEndDateChange}
+          />
+        </>
+      )}
     </>
   );
 };

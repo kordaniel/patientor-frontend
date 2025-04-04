@@ -74,10 +74,10 @@ export interface Patient {
 
 export type PatientFormValues = Omit<Patient, 'id' | 'entries'>;
 export type NonSensitivePatient = Omit<Patient, 'ssn' | 'entries'>;
-export type BaseEntryFormValues = Required<Omit<BaseEntry,'id'>>;
+export type BaseEntryFormValues = Required<Omit<BaseEntry,'id' | 'type'>>;
 
-export type NewEntryFormValues = Required<UnionOmit<Entry, 'id'>>;
+export type NewEntryFormValues = UnionOmit<Entry, 'id'>;
 
 export type HealthCheckEntryFormValues = UnionExtractExtendingFields<HealthCheckEntry, BaseEntry>;
-export type OccupationalHealthcareEntryFormValues = Required<UnionExtractExtendingFields<OccupationalHealthcareEntry, BaseEntry>>;
+export type OccupationalHealthcareEntryFormValues = UnionExtractExtendingFields<OccupationalHealthcareEntry, BaseEntry>;
 export type HospitalEntryFormValues = UnionExtractExtendingFields<HospitalEntry, BaseEntry>;

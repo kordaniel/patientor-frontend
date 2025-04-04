@@ -65,7 +65,7 @@ const PatientPage = ({ diagnosesList }: PatientPageProps) => {
       <Typography variant="body1">SSN: {patient.ssn}</Typography>
       <Typography variant="body1">DoB: {new Date(patient.dateOfBirth).toLocaleDateString()}</Typography>
       <Typography variant="body1">Occupation: {patient.occupation}</Typography>
-      <AddEntryForm patientId={patientId} addEntryToPatient={addEntryToPatient} />
+      <AddEntryForm patientId={patientId} diagnosesList={diagnosesList} addEntryToPatient={addEntryToPatient} />
       <Entries entries={patient.entries} diagnosesList={diagnosesList} />
     </Box>
   );
